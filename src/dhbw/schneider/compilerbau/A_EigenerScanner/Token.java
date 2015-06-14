@@ -3,7 +3,7 @@
  * Prof. Dr. Jörn Eisenbiegler
  * 
  * Vorlesung Übersetzerbau
- * Übungsbeispiel AS-Scanner 1
+ * Übungsbeispiel AS-Scanner 3
  * 
  * **********************************************
  */
@@ -20,6 +20,9 @@ public class Token {
 	public static final int ZAHL = 4;
 	public static final int ID = 5;
 	public static final int NULL = 6;
+	public static final int BRUCH = 7;
+	public static final int BIS = 8;
+	
 	
 	private int type;
 	private String text;

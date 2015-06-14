@@ -3,7 +3,7 @@
  * Prof. Dr. Jörn Eisenbiegler
  * 
  * Vorlesung Übersetzerbau
- * Übungsbeispiel AS-SCanner 1
+ * Übungsbeispiel AS-SCanner 3
  * 
  * **********************************************
  */
@@ -17,17 +17,19 @@ public class ASScanner {
 		
 	private final int ignore = -2;
 	
-	private InputStreamReader in = null;
+	private LookaheadReader in = null;
 	private StringBuffer text = new StringBuffer();
 	
-	private enum ASState { WS, LSBR, RSBR, COMMA, ZAHL, NAME, N, U, L, NULL, EOF};
+	private enum ASState { WS, LSBR, RSBR, COMMA, ZAHL, NAME, N, U, L, NULL, EOF, 
+							PUNKT, BRUCHTEIL, HOCH, EXP, BIS1, BIS2};
+	
 	
 	private ASState state = ASState.WS;
 	private int tokentype = Token.INVALID;
 
 	
 	public ASScanner(InputStream input) {
-		this.in = new InputStreamReader(input);
+		this.in = new LookaheadReader(new InputStreamReader(input));
 	}
 	
 	private Token step(int c, ASState newState, boolean create, int newTokenType) {
@@ -66,6 +68,10 @@ public class ASScanner {
 					token = step(c, ASState.ZAHL, false, Token.ZAHL); break;
 				case 'n':
 					token = step(c, ASState.N, false, Token.ID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, false, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -92,6 +98,10 @@ public class ASScanner {
 					token = step(c, ASState.ZAHL, true, Token.ZAHL); break;
 				case 'n':
 					token = step(c, ASState.N, true, Token.ID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, true, Token.ID);
@@ -116,6 +126,18 @@ public class ASScanner {
 				case '0': case '1': case '2': case '3': case '4':
 				case '5': case '6': case '7': case '8': case '9':
 					token = step(c, ASState.ZAHL, false, Token.ZAHL); break;
+				/* Aufgabe 3 */
+				case '.':
+					int count =1;
+					while (in.lookahead(count)=='.') { count++;}
+					count--;
+					if (count%2==0) {
+						token = step(c, ASState.PUNKT, false, Token.BRUCH);
+					} else {
+						token = step(c, ASState.BIS1, true, Token.INVALID);
+					} 
+					break;
+				/* --- */	
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -140,6 +162,10 @@ public class ASScanner {
 				case '0': case '1': case '2': case '3': case '4':
 				case '5': case '6': case '7': case '8': case '9':
 					token = step(c, ASState.NAME, false, Token.ID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -166,6 +192,10 @@ public class ASScanner {
 					token = step(c, ASState.NAME, false, Token.ID); break;
 				case 'u':
 					token = step(c, ASState.U, false, Token.ID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -192,6 +222,10 @@ public class ASScanner {
 					token = step(c, ASState.NAME, false, Token.ID); break;
 				case 'l':
 					token = step(c, ASState.L, false, Token.ID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -218,6 +252,10 @@ public class ASScanner {
 					token = step(c, ASState.NAME, false, Token.ID); break;
 				case 'l':
 					token = step(c, ASState.NULL, false, Token.NULL); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -242,6 +280,10 @@ public class ASScanner {
 				case '0': case '1': case '2': case '3': case '4':
 				case '5': case '6': case '7': case '8': case '9':
 					token = step(c, ASState.NAME, false, Token.ID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
 				default:
 					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
 						token = step(c, ASState.NAME, false, Token.ID);
@@ -253,6 +295,142 @@ public class ASScanner {
 				break;
 			case EOF:
 				token = step(ignore, ASState.EOF, true, Token.EOF); break;
+			case PUNKT:
+				switch(c) {
+				case -1:
+					token = step(ignore, ASState.EOF, true, Token.EOF); break;
+				case ' ': case '\t': case '\n': case '\r':
+					token = step(ignore, ASState.WS, true, Token.INVALID); break;
+				case '[':
+					token = step(c, ASState.LSBR, true, Token.LSBR); break;
+				case ']':
+					token = step(c, ASState.RSBR, true, Token.RSBR); break;
+				case ',':
+					token = step(c, ASState.COMMA, true, Token.COMMA); break;
+				case '0': case '1': case '2': case '3': case '4':
+				case '5': case '6': case '7': case '8': case '9':
+					token = step(c, ASState.BRUCHTEIL, false, Token.BRUCH); break;
+				case '^':
+					token = step(c, ASState.HOCH, false, Token.INVALID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
+				default:
+					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
+						token = step(c, ASState.NAME, true, Token.ID);
+					} else {
+						throw new Exception("Unexpected character: '"+(char) c+"' ("+c+")");
+					}
+				} 
+				break;
+			case BRUCHTEIL:
+				switch(c) {
+				case -1:
+					token = step(ignore, ASState.EOF, true, Token.EOF); break;
+				case ' ': case '\t': case '\n': case '\r':
+					token = step(ignore, ASState.WS, true, Token.INVALID); break;
+				case '[':
+					token = step(c, ASState.LSBR, true, Token.LSBR); break;
+				case ']':
+					token = step(c, ASState.RSBR, true, Token.RSBR); break;
+				case ',':
+					token = step(c, ASState.COMMA, true, Token.COMMA); break;
+				case '0': case '1': case '2': case '3': case '4':
+				case '5': case '6': case '7': case '8': case '9':
+					token = step(c, ASState.BRUCHTEIL, false, Token.BRUCH); break;
+				case '^':
+					token = step(c, ASState.HOCH, false, Token.INVALID); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
+				default:
+					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
+						token = step(c, ASState.NAME, true, Token.ID);
+					} else {
+						throw new Exception("Unexpected character: '"+(char) c+"' ("+c+")");
+					}
+				} 
+				break;
+			case HOCH:
+				switch(c) {
+				case -1:
+					throw new Exception("Unexpected end of file!"); 
+				case '0': case '1': case '2': case '3': case '4':
+				case '5': case '6': case '7': case '8': case '9':
+					token = step(c, ASState.EXP, false, Token.BRUCH); break;
+				default:
+					throw new Exception("Unexpected character: '"+(char) c+"' ("+c+")");
+				} 
+				break;
+			case EXP:
+				switch(c) {
+				case -1:
+					token = step(ignore, ASState.EOF, true, Token.EOF); break;
+				case ' ': case '\t': case '\n': case '\r':
+					token = step(ignore, ASState.WS, true, Token.INVALID); break;
+				case '[':
+					token = step(c, ASState.LSBR, true, Token.LSBR); break;
+				case ']':
+					token = step(c, ASState.RSBR, true, Token.RSBR); break;
+				case ',':
+					token = step(c, ASState.COMMA, true, Token.COMMA); break;
+				case '0': case '1': case '2': case '3': case '4':
+				case '5': case '6': case '7': case '8': case '9':
+					token = step(c, ASState.EXP, false, Token.BRUCH); break;
+				/* Aufgabe 3 */
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				/* --- */
+				default:
+					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
+						token = step(c, ASState.NAME, true, Token.ID);
+					} else {
+						throw new Exception("Unexpected character: '"+(char) c+"' ("+c+")");
+					}
+				} 
+				break;
+			/* Aufgabe 3 */
+			case BIS1:
+				switch(c) {
+				case -1:
+					throw new Exception("Unexpected end of file!"); 
+				case '.': 
+					token = step(c, ASState.BIS2, false, Token.BIS); break;
+				default:
+						throw new Exception("Unexpected character: '"+(char) c+"' ("+c+")");
+				} 
+				break;
+			case BIS2:
+				switch(c) {
+				case -1:
+					token = step(ignore, ASState.EOF, true, Token.EOF); break;
+				case ' ': case '\t': case '\n': case '\r':
+					token = step(ignore, ASState.WS, true, Token.INVALID); break;
+				case '[':
+					token = step(c, ASState.LSBR, true, Token.LSBR); break;
+				case ']':
+					token = step(c, ASState.RSBR, true, Token.RSBR); break;
+				case ',':
+					token = step(c, ASState.COMMA, true, Token.COMMA); break;
+				case '0': case '1': case '2': case '3': case '4':
+				case '5': case '6': case '7': case '8': case '9':
+					token = step(c, ASState.ZAHL, true, Token.ZAHL); break;
+				case 'n':
+					token = step(c, ASState.N, true, Token.ID); break;
+				case '.':
+					token = step(c, ASState.BIS1, true, Token.INVALID); break;
+				default:
+					if (('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
+						token = step(c, ASState.NAME, true, Token.ID);
+					} else {
+						throw new Exception("Unexpected character: '"+(char) c+"' ("+c+")");
+					}
+					
+				}
+				break;
+				/* --- */
 			default:
 				throw new Exception("Unexpected state: "+state);
 			}
