@@ -3,7 +3,7 @@
  * Prof. Dr. Jörn Eisenbiegler
  * 
  * Vorlesung Übersetzerbau
- * Übungsbeispiel AS-SCanner 3
+ * Übungsbeispiel AS-SCanner 5
  * 
  * **********************************************
  */
